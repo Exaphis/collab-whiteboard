@@ -11,7 +11,8 @@
 <div id="wrapper">
     <span id="user-wrapper"><span id="user-count"></span></span>
     <div id="heart-wrapper">
-        <img id="heart" class="default-button" src="{{ url_for('static', filename='images/heart_emoji.png') }}" alt="">
+        <img id="heart" class="default-button"
+             src="{{ url_for('static', filename='images/heart_emoji.png', _external=True) }}" alt="">
     </div>
     <div id="canvas-wrapper">
         <div id="top-bar">
