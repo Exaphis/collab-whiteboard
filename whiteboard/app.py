@@ -2,7 +2,7 @@ from flask import Flask, render_template, url_for
 from flask_socketio import SocketIO, emit
 import os
 
-import secrets
+from whiteboard import secrets
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = secrets.FLASK_SECRET_KEY
