@@ -74,4 +74,4 @@ def clear_board():
 
 if __name__ == '__main__':
     print("Server running.")
-    socketio.run(app)
+    socketio.run(app, host='0.0.0.0')
