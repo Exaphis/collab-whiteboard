@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/index.css') }}">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Ashley & Kevin's shared heart</title>
+</head>
+<body>
+<canvas id="brush"></canvas>
+<div id="wrapper">
+    <span id="user-wrapper"><span id="user-count"></span></span>
+    <div id="heart-wrapper">
+        <img id="heart" class="default-button" src="{{ url_for('static', filename='images/heart_emoji.png') }}" alt="">
+    </div>
+    <div id="canvas-wrapper">
+        <div id="top-bar">
+            <button id="reset">Reset</button>
+            <input class="jscolor" id="color-picker" value="000000">
+            <label><input id="erase-checkbox" type="checkbox"/>Erase</label>
+            <div class="thickness-container">
+                <span>Thickness: </span>
+                <input type="range" min="2" max="30" value="3" class="slider" id="thickness-slider">
+            </div>
+        </div>
+        <canvas id="whiteboard-canvas" width="600" height="600"></canvas>
+    </div>
+</div>
+
+</body>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js" crossorigin="anonymous"></script>
+<script src="{{ url_for('static', filename='js/jscolor.js') }}"></script>
+<script src="{{ url_for('static', filename='js/index.js') }}"></script>
+</html>

@@ -1,0 +1,70 @@
+:root {
+  font-family: "Avenir Next", sans-serif;
+  font-size: 2vmin;
+}
+
+#wrapper {
+    display: flex;
+}
+
+#user-wrapper {
+    flex-shrink: 0;
+}
+
+#user-count {
+    border: 2px solid gray;
+}
+
+#heart-wrapper{
+    margin: 0 5vmin;
+    height: 30vmin;
+}
+
+#heart {
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 15px;
+}
+
+.default-button:hover {
+    border: 2px solid black;
+}
+
+.default-button {
+    border: 2px solid gray;
+    box-shadow: 0 9px #999;
+}
+
+.clicked-button {
+    border: 2px solid black;
+    box-shadow: 0 5px #666;
+    transform: translateY(4px);
+}
+
+#top-bar {
+    height: 3vh;
+    margin-bottom: 2vh;
+    display: flex;
+    justify-content: space-between;
+}
+
+.thickness-container {
+    display: flex;
+}
+
+#canvas-wrapper {
+    display: flex;
+    flex-direction: column;
+}
+
+#whiteboard-canvas {
+    cursor: none;
+    border: 2px solid gray;
+}
+
+#brush {
+    position: absolute;
+    top: 200vh;
+    left: 200vw;
+    pointer-events: none;
+}
