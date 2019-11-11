@@ -1,4 +1,4 @@
-const socket = io.connect();
+const socket = io();
 
 // ------------- Users -------------
 socket.on('users', function(msg) {
