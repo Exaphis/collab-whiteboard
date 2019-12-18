@@ -129,3 +129,5 @@ dmypy.json
 .pyre/
 
 .idea/
+
+whiteboard/secrets.py
