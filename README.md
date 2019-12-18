@@ -5,6 +5,7 @@ A collaborative whiteboard with synced button, served with Flask.
 This project uses Flask-SocketIO to synchronize the buttons and client's whiteboard state.
 
 ### Number of users
+* When user connects, server will send `user` message to all clients with number of users connected
 
 ### Whiteboard
 * Stroke object
@@ -45,8 +46,8 @@ This project uses Flask-SocketIO to synchronize the buttons and client's whitebo
     * Client sends `save-drawing` message with canvas data blob
     * Server sends `add-saved-drawing` message with canvas data blob to all clients
     
-### Synced button
-Button will not press if socket is not connected.
+### Button
+Button will not function if socket is not connected.
 * Button click
     * Upon button click, client sends `btn-click` message to server
     * When server receives button click, it sends `btn-click` message to all clients

@@ -80,7 +80,7 @@ def socket_connect():
     users += 1
     emit('users', users, broadcast=True)
 
-    emit('draw-strokes', {'all_strokes': get_all_strokes()})
+    emit('draw-strokes', get_all_strokes())
 
     if button_pressed:
         emit('btn-click')
@@ -140,7 +140,7 @@ def stroke_delete():
         strokes[request.sid].pop()
 
     emit('clear-board', broadcast=True)
-    emit('draw-strokes', {'all_strokes': get_all_strokes()}, broadcast=True)
+    emit('draw-strokes', get_all_strokes(), broadcast=True)
 
 
 @socketio.on('clear-board')

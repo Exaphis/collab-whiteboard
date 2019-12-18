@@ -179,9 +179,8 @@ socket.on('draw-new-stroke', function(data) {
 });
 
 socket.on('draw-strokes', function(data) {
-    let all_strokes = data['all_strokes'];
-    for (let i = 0; i < all_strokes.length; i++) {
-        let stroke = all_strokes[i];
+    for (let i = 0; i < data.length; i++) {
+        let stroke = data[i];
         drawOnCanvas(stroke.points, stroke.color, stroke.thickness);
     }
 });
