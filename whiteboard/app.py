@@ -34,7 +34,10 @@ app.wsgi_app = ReverseProxied(app.wsgi_app)
 socketio = SocketIO(app)
 
 users = 0
+
 button_pressed = False
+button_clicks = 0
+
 strokes = defaultdict(list)
 strokes_lock = Lock()
 
@@ -76,12 +79,11 @@ def get_all_strokes():
 
 @socketio.on('connect')
 def socket_connect():
-    global users
+    global users, button_clicks
     users += 1
     emit('users', users, broadcast=True)
-
+    emit('update-click-count', button_clicks, broadcast=True)
     emit('draw-strokes', get_all_strokes())
-
     if button_pressed:
         emit('btn-click')
 
@@ -95,14 +97,25 @@ def socket_disconnect():
 # Button handling
 @socketio.on('btn-click')
 def button_click():
-    global button_pressed
+    global button_pressed, button_clicks
+
+    if button_pressed:
+        return
+
+    button_clicks += 1
     button_pressed = True
+
+    emit('update-click-count', button_clicks, broadcast=True)
     emit('btn-click', broadcast=True)
 
 
 @socketio.on('btn-release')
 def button_release():
     global button_pressed
+
+    if not button_pressed:
+        return
+
     button_pressed = False
     emit('btn-release', broadcast=True)
 

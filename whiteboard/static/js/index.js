@@ -2,7 +2,7 @@ const socket = io();
 
 // ------------- Users -------------
 socket.on('users', function(msg) {
-    document.getElementById('user-count').textContent = msg + ' online'
+    document.getElementById('user-count').textContent = msg + ' online';
 });
 
 // ------------- Synced Button -------------
@@ -14,7 +14,7 @@ button.onmouseup = function() {
     socket.emit('btn-release');
 };
 
-socket.on('btn-click', function() {
+socket.on('btn-click', function(msg) {
     button.classList.remove('default-button');
     button.classList.add('clicked-button');
 });
@@ -22,6 +22,13 @@ socket.on('btn-release', function() {
     button.classList.remove('clicked-button');
     button.classList.add('default-button');
 });
+
+let clickCount = document.getElementById('click-count');
+socket.on('update-click-count', function(count) {
+   clickCount.textContent = count + (count === 1 ? ' click' : ' clicks');
+});
+
+
 
 // ------------- Whiteboard -------------
 let brush = document.getElementById('brush');

@@ -48,9 +48,10 @@ This project uses Flask-SocketIO to synchronize the buttons and client's whitebo
     
 ### Button
 Button will not function if socket is not connected.
+
 * Button click
     * Upon button click, client sends `btn-click` message to server
-    * When server receives button click, it sends `btn-click` message to all clients
+    * When server receives button click, it sends `btn-click` message to all clients with number of clicks since start
         * Clients press button
 * Button release
     * Upon button release, client sends `btn-release` message to server

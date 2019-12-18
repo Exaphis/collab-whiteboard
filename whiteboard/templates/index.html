@@ -9,7 +9,10 @@
 <body>
 <canvas id="brush"></canvas>
 <div id="wrapper">
-    <span id="user-wrapper"><span id="user-count"></span></span>
+    <span id="labels-wrapper">
+        <span id="user-count">Not connected</span>
+        <span id="click-count">Not connected</span>
+    </span>
     <div id="button-wrapper">
         <img id="button" class="default-button"
              src="{{ url_for('static', filename='images/heart_emoji.png', _external=True) }}" alt="">

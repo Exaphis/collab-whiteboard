@@ -7,12 +7,21 @@
     display: flex;
 }
 
-#user-wrapper {
+#labels-wrapper {
+    display: flex;
+    flex-direction: column;
     flex-shrink: 0;
 }
 
 #user-count {
     border: 2px solid gray;
+    text-align: center;
+}
+
+#click-count {
+    border: 2px solid gray;
+    margin-top: 5px;
+    text-align: center;
 }
 
 #button-wrapper{
