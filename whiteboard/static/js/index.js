@@ -5,22 +5,22 @@ socket.on('users', function(msg) {
     document.getElementById('user-count').textContent = msg + ' online'
 });
 
-// ------------- Heart Button -------------
-let heartButton = document.getElementById('heart');
-heartButton.onmousedown = function() {
-    socket.emit('heart click');
+// ------------- Synced Button -------------
+let button = document.getElementById('button');
+button.onmousedown = function() {
+    socket.emit('btn-click');
 };
-heartButton.onmouseup = function() {
-    socket.emit('heart release');
+button.onmouseup = function() {
+    socket.emit('btn-release');
 };
 
-socket.on('heart click', function() {
-    heartButton.classList.remove('default-button');
-    heartButton.classList.add('clicked-button');
+socket.on('btn-click', function() {
+    button.classList.remove('default-button');
+    button.classList.add('clicked-button');
 });
-socket.on('heart release', function() {
-    heartButton.classList.remove('clicked-button');
-    heartButton.classList.add('default-button');
+socket.on('btn-release', function() {
+    button.classList.remove('clicked-button');
+    button.classList.add('default-button');
 });
 
 // ------------- Whiteboard -------------
@@ -30,6 +30,7 @@ let brushCenterX = brush.width / 2;
 let brushCenterY = brush.height / 2;
 brushCtx.lineWidth = 1;
 function drawBrush(width) {
+    brushCtx.clearRect(0, 0, brush.width, brush.height);
     brushCtx.beginPath();
     brushCtx.arc(brushCenterX, brushCenterY, width / 2, 0, 2 * Math.PI, false);
     brushCtx.stroke();
@@ -40,32 +41,36 @@ let ctx = canvas.getContext('2d');
 ctx.lineCap = 'round';
 ctx.lineJoin = 'round';
 
+let currentStroke = null;
+// When undo is pressed, pop top stroke off and redraw
+let strokes = [];
+
 // Erase checkbox
 let eraseCheckbox = document.getElementById('erase-checkbox');
 eraseCheckbox.onchange = function() {
     if (this.checked) {
-        ctx.lineWidth = thicknessSlider.value * 3;
+        currentThickness = thicknessSlider.value * 3;
         brushCtx.clearRect(0, 0, brush.width, brush.height);
-        drawBrush(ctx.lineWidth);
+        drawBrush(currentThickness);
     } else {
-        ctx.lineWidth = thicknessSlider.value;
-        brushCtx.clearRect(0, 0, brush.width, brush.height);
-        drawBrush(ctx.lineWidth);
+        currentThickness = thicknessSlider.value;
+        drawBrush(currentThickness);
     }
 };
 
 // Thickness slider
 let thicknessSlider = document.getElementById("thickness-slider");
-ctx.lineWidth = thicknessSlider.defaultValue;
-drawBrush(ctx.lineWidth);
+let currentThickness = thicknessSlider.defaultValue;
+
+drawBrush(currentThickness);
 thicknessSlider.onchange = function() {
-    ctx.lineWidth = this.value;
+    currentThickness = this.value;
     if (eraseCheckbox.checked) {
-        ctx.lineWidth *= 3;
+        currentThickness *= 3;
     }
 
     brushCtx.clearRect(0, 0, brush.width, brush.height);
-    drawBrush(ctx.lineWidth);
+    drawBrush(currentThickness);
 };
 
 // Color picker
@@ -75,35 +80,31 @@ colorPicker.onchange = function() {
     currentColor = '#' + this.value;
 };
 
+// Undo button
+// Disabled since there is nothing to undo at first
+let undoButton = document.getElementById('undo');
+undoButton.disabled = true;
+
 // Reset button
 let resetButton = document.getElementById('reset');
-resetButton.onclick = function() {
-    socket.emit('clear board');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-};
 
-// create a flag
-let isActive = false;
-
-// array to collect coordinates
-let plots = [];
-
-function draw(e) {
+function drawNewPoint(e) {
     brush.style.top = e.clientY - brushCenterY + 'px';
     brush.style.left = e.clientX - brushCenterX + 'px';
-    if (!isActive)
+    if (currentStroke === null)
         return;
 
     // cross-browser canvas coordinates
     let x = e.offsetX || e.layerX - canvas.offsetLeft;
     let y = e.offsetY || e.layerY - canvas.offsetTop;
 
-    plots.push({x: x, y: y});
-    socket.emit('plot', {plots: plots, color: currentColor, thickness: ctx.lineWidth});
-    drawOnCanvas(plots, currentColor);
+    currentStroke.points.push({x: x, y: y});
+    drawOnCanvas(currentStroke.points, currentStroke.color, currentStroke.thickness);
+
+    socket.emit('stroke-update', {x: x, y: y})
 }
 
-function drawOnCanvas(plots, color) {
+function drawOnCanvas(plots, color, thickness) {
     ctx.beginPath();
     ctx.moveTo(plots[0].x, plots[0].y);
 
@@ -111,13 +112,12 @@ function drawOnCanvas(plots, color) {
       ctx.lineTo(plots[i].x, plots[i].y);
     }
 
+    ctx.lineWidth = thickness;
     ctx.strokeStyle = color;
     ctx.stroke();
 }
 
 function startDraw(e) {
-    isActive = true;
-
     if (eraseCheckbox.checked) {
         currentColor = '#FFFFFF';
     }
@@ -125,39 +125,63 @@ function startDraw(e) {
     // Hack to draw even if cursor doesn't move
     let x = e.offsetX || e.layerX - canvas.offsetLeft;
     let y = e.offsetY || e.layerY - canvas.offsetTop;
-    plots.push({x: x-1, y: y-1});
-    draw(e);
+
+    currentStroke = {
+        thickness: currentThickness,
+        color: currentColor,
+        points: [{x: x-1, y: y-1}]
+    };
+
+    socket.emit('stroke-start', currentStroke);
+
+    drawNewPoint(e);
 }
 
 function endDraw() {
-    isActive = false;
-
-    // empty the array
-    plots = [];
+    strokes.push(currentStroke);
+    currentStroke = null;
 
     if (eraseCheckbox.checked) {
         currentColor = '#' + colorPicker.value;
     }
+
+    undoButton.disabled = false;
 }
 
+function clearBoard() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+undoButton.onclick = function() {
+    strokes.pop();
+    if (strokes.length === 0) {
+        undoButton.disabled = true;
+    }
+
+    socket.emit('stroke-delete');
+};
+
+resetButton.onclick = function() {
+    clearBoard();
+    thicknessSlider.value = thicknessSlider.defaultValue;
+    thicknessSlider.onchange(null);
+    socket.emit('clear-board');
+};
+
 canvas.addEventListener('mousedown', startDraw, false);
-canvas.addEventListener('mousemove', draw, false);
+canvas.addEventListener('mousemove', drawNewPoint, false);
 canvas.addEventListener('mouseup', endDraw, false);
 
-socket.on('draw', function(data) {
-    ctx.lineWidth = data['thickness'];
-    drawOnCanvas(data['plots'], data['color']);
+socket.on('clear-board', clearBoard);
+
+socket.on('draw-new-stroke', function(data) {
+    drawOnCanvas(data.points, data.color, data.thickness);
 });
 
-socket.on('clear board', function() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-});
-
-socket.on('init state', function(plots) {
-    for (let i = 0; i < plots.length; i++) {
-        let data = plots[i];
-        ctx.lineWidth = data['thickness'];
-        drawOnCanvas(data['plots'], data['color']);
+socket.on('draw-strokes', function(data) {
+    let all_strokes = data['all_strokes'];
+    for (let i = 0; i < all_strokes.length; i++) {
+        let stroke = all_strokes[i];
+        drawOnCanvas(stroke.points, stroke.color, stroke.thickness);
     }
-    ctx.lineWidth = thicknessSlider.value;
 });

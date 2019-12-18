@@ -10,13 +10,14 @@
 <canvas id="brush"></canvas>
 <div id="wrapper">
     <span id="user-wrapper"><span id="user-count"></span></span>
-    <div id="heart-wrapper">
-        <img id="heart" class="default-button"
+    <div id="button-wrapper">
+        <img id="button" class="default-button"
              src="{{ url_for('static', filename='images/heart_emoji.png', _external=True) }}" alt="">
     </div>
     <div id="canvas-wrapper">
         <div id="top-bar">
             <button id="reset">Reset</button>
+            <button id="undo">Undo</button>
             <input class="jscolor" id="color-picker" value="000000">
             <label><input id="erase-checkbox" type="checkbox"/>Erase</label>
             <div class="thickness-container">

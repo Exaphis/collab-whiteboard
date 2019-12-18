@@ -1,6 +1,10 @@
-from flask import Flask, render_template, url_for
+from collections import defaultdict
+from flask import Flask, render_template, url_for, request
 from flask_socketio import SocketIO, emit
 import os
+import operator
+from threading import Lock
+import time
 
 from whiteboard import secrets
 
@@ -30,8 +34,9 @@ app.wsgi_app = ReverseProxied(app.wsgi_app)
 socketio = SocketIO(app)
 
 users = 0
-button_state = False
-plots = []
+button_pressed = False
+strokes = defaultdict(list)
+strokes_lock = Lock()
 
 # Taken from https://stackoverflow.com/questions/32132648/python-flask-and-jinja2-passing-parameters-to-url-for
 @app.context_processor
@@ -56,12 +61,29 @@ def index():
     return render_template('index.html')
 
 
+def get_all_strokes():
+    """
+    Retrieve from strokes list strokes in sorted order.
+    :return: list of strokes in sorted by time, ascending
+    """
+    global strokes
+    all_strokes = []
+    for stroke_list in strokes.values():
+        all_strokes.extend(stroke_list)
+    all_strokes.sort(key=operator.itemgetter('time'))
+    return all_strokes
+
+
 @socketio.on('connect')
 def socket_connect():
     global users
     users += 1
-    emit("users", users, broadcast=True)
-    emit("init state", plots)
+    emit('users', users, broadcast=True)
+
+    emit('draw-strokes', {'all_strokes': get_all_strokes()})
+
+    if button_pressed:
+        emit('btn-click')
 
 
 @socketio.on('disconnect')
@@ -70,29 +92,69 @@ def socket_disconnect():
     users -= 1
     emit('users', users, broadcast=True)
 
-
-@socketio.on('heart click')
-def heart_click():
-    emit('heart click', broadcast=True)
-
-
-@socketio.on('heart release')
-def heart_release():
-    emit('heart release', broadcast=True)
+# Button handling
+@socketio.on('btn-click')
+def button_click():
+    global button_pressed
+    button_pressed = True
+    emit('btn-click', broadcast=True)
 
 
-@socketio.on('plot')
-def add_plot(data):
-    global plots
-    plots.append(data)
-    emit('draw', data, include_self=False, broadcast=True)
+@socketio.on('btn-release')
+def button_release():
+    global button_pressed
+    button_pressed = False
+    emit('btn-release', broadcast=True)
+
+# Whiteboard handling
+@socketio.on('stroke-start')
+def stroke_start(data):
+    global strokes
+
+    with strokes_lock:
+        data['time'] = time.time()
+        strokes[request.sid].append(data)
 
 
-@socketio.on('clear board')
+@socketio.on('stroke-update')
+def stroke_update(data):
+    global strokes
+
+    with strokes_lock:
+        # Original stroke will still update
+        # because stroke holds reference to most recent stroke
+        stroke = strokes[request.sid][-1]
+        stroke['points'].append(data)
+
+        update_stroke = {'thickness': stroke['thickness'],
+                         'color': stroke['color'],
+                         'points': stroke['points'][-2:]}
+    emit('draw-new-stroke', update_stroke, broadcast=True, include_self=False)
+
+
+@socketio.on('stroke-delete')
+def stroke_delete():
+    global strokes
+
+    with strokes_lock:
+        strokes[request.sid].pop()
+
+    emit('clear-board', broadcast=True)
+    emit('draw-strokes', {'all_strokes': get_all_strokes()}, broadcast=True)
+
+
+@socketio.on('clear-board')
 def clear_board():
-    global plots
-    plots = []
-    emit('clear board', include_self=False, broadcast=True)
+    global strokes
+
+    with strokes_lock:
+        strokes.clear()
+    emit('clear-board', broadcast=True, include_self=False)
+
+
+@socketio.on('save-drawing')
+def save_drawing(data):
+    pass
 
 
 if __name__ == '__main__':
